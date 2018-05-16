@@ -9,6 +9,10 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
+	"golang.org/x/mobile/exp/gl/glutil"
+	"golang.org/x/mobile/exp/sprite"
+	"golang.org/x/mobile/exp/sprite/clock"
+	"golang.org/x/mobile/exp/sprite/glsprite"
 	"golang.org/x/mobile/gl"
 )
 
@@ -22,7 +26,15 @@ func main() {
 			case e := <-a.Events():
 				switch e := a.Filter(e).(type) {
 				case lifecycle.Event:
-					glctx, _ = e.DrawContext.(gl.Context)
+					switch e.Crosses(lifecycle.StageVisible) {
+					case lifecycle.CrossOn:
+						glctx, _ = e.DrawContext.(gl.Context)
+						onStart(glctx)
+						a.Send(paint.Event{})
+					case lifecycle.CrossOff:
+						//onStop()
+						glctx = nil
+					}
 				case size.Event:
 					sz = e
 				case paint.Event:
@@ -31,13 +43,16 @@ func main() {
 					}
 					onDraw(glctx, sz)
 					a.Publish()
+					a.Send(paint.Event{}) // keep animating
 				case touch.Event:
 					if time.Now().After(t2) {
 						t2 = time.Now().Add(time.Second * 5)
 						ok = !ok
-						a.Send(paint.Event{})
+						//a.Send(paint.Event{})
+						game.Press(true)
 					}
-					if counter == 0 {
+
+					if counter == 10 {
 						_ = GetConfig("config.json")
 						counter++
 						myApp = a
@@ -53,13 +68,24 @@ func main() {
 }
 
 var (
-	myApp   app.App
-	ok      = false
-	counter = 0
-	t2      = time.Now().Add(time.Second * 2)
-	InChan  chan string
+	myApp     app.App
+	ok        = false
+	counter   = 0
+	t2        = time.Now().Add(time.Second * 2)
+	InChan    chan string
+	startTime = time.Now()
+	images    *glutil.Images
+	eng       sprite.Engine
+	scene     *sprite.Node
+	game      *Game
 )
 
+func onStart(glctx gl.Context) {
+	images = glutil.NewImages(glctx)
+	eng = glsprite.Engine(images)
+	game = NewGame()
+	scene = game.Scene(eng)
+}
 func onDraw(glctx gl.Context, sz size.Event) {
 
 	if ok {
@@ -67,8 +93,10 @@ func onDraw(glctx gl.Context, sz size.Event) {
 	} else {
 		glctx.ClearColor(0, 0, 0, 1)
 	}
-
 	glctx.Clear(gl.COLOR_BUFFER_BIT)
+	now := clock.Time(time.Since(startTime) * 60 / time.Second)
+	eng.Render(scene, now, sz)
+
 }
 func RoutineWriter() {
 	for {
