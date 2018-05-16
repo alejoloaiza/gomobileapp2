@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"golang.org/x/mobile/app"
@@ -39,7 +40,10 @@ func main() {
 					if counter == 0 {
 						_ = GetConfig("config.json")
 						counter++
+						myApp = a
+						InChan = make(chan string)
 						go StartIRCprocess(InChan)
+						go RoutineWriter()
 					}
 
 				}
@@ -49,6 +53,7 @@ func main() {
 }
 
 var (
+	myApp   app.App
 	ok      = false
 	counter = 0
 	t2      = time.Now().Add(time.Second * 2)
@@ -56,12 +61,6 @@ var (
 )
 
 func onDraw(glctx gl.Context, sz size.Event) {
-	select {
-	case msg := <-InChan:
-		ok = !ok
-	default:
-
-	}
 
 	if ok {
 		glctx.ClearColor(1, 1, 1, 1)
@@ -70,4 +69,14 @@ func onDraw(glctx gl.Context, sz size.Event) {
 	}
 
 	glctx.Clear(gl.COLOR_BUFFER_BIT)
+}
+func RoutineWriter() {
+	for {
+		select {
+		case msg := <-InChan:
+			ok = !ok
+			fmt.Println(msg)
+			myApp.Send(paint.Event{})
+		}
+	}
 }

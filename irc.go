@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func StartIRCprocess(in chan string) {
+func StartIRCprocess(out chan string) {
 
 MainCycle:
 	for {
@@ -66,7 +66,7 @@ MainCycle:
 				if text[3] == ":!cmd" {
 					repeat = false
 					commandresponse := ProcessCommand(text[4:])
-					in <- "ok"
+					out <- "ok"
 					response = "PRIVMSG " + respondTo + " :" + commandresponse
 
 				}
