@@ -9,6 +9,7 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
+	"golang.org/x/mobile/exp/app/debug"
 	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/exp/sprite"
 	"golang.org/x/mobile/exp/sprite/clock"
@@ -32,7 +33,7 @@ func main() {
 						onStart(glctx)
 						a.Send(paint.Event{})
 					case lifecycle.CrossOff:
-						//onStop()
+						onStop()
 						glctx = nil
 					}
 				case size.Event:
@@ -46,10 +47,10 @@ func main() {
 					a.Send(paint.Event{}) // keep animating
 				case touch.Event:
 					if time.Now().After(t2) {
-						t2 = time.Now().Add(time.Second * 5)
+						t2 = time.Now().Add(time.Second * 2)
 						ok = !ok
 						//a.Send(paint.Event{})
-						game.Press(true)
+						game.Press(true, e.Y/float32(sz.HeightPx), e.X)
 					}
 
 					if counter == 10 {
@@ -78,6 +79,7 @@ var (
 	eng       sprite.Engine
 	scene     *sprite.Node
 	game      *Game
+	fps       *debug.FPS
 )
 
 func onStart(glctx gl.Context) {
@@ -85,6 +87,14 @@ func onStart(glctx gl.Context) {
 	eng = glsprite.Engine(images)
 	game = NewGame()
 	scene = game.Scene(eng)
+	fps = debug.NewFPS(images)
+	debug.NewFPS(images)
+}
+func onStop() {
+	eng.Release()
+	images.Release()
+	game = nil
+	fps.Release()
 }
 func onDraw(glctx gl.Context, sz size.Event) {
 
@@ -96,6 +106,7 @@ func onDraw(glctx gl.Context, sz size.Event) {
 	glctx.Clear(gl.COLOR_BUFFER_BIT)
 	now := clock.Time(time.Since(startTime) * 60 / time.Second)
 	eng.Render(scene, now, sz)
+	fps.Draw(sz)
 
 }
 func RoutineWriter() {

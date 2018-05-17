@@ -69,7 +69,7 @@ func NewGame() *Game {
 }
 
 func (g *Game) reset() {
-	g.gopher.y = 150
+	g.gopher.y = 120
 	g.gopher.v = 0
 	g.scroll.x = 0
 	g.scroll.v = initScrollV
@@ -81,7 +81,7 @@ func (g *Game) reset() {
 	g.gopher.flapped = false
 	g.gopher.dead = false
 	g.gopher.deadTime = 0
-	g.gopher.size = 0
+	g.gopher.size = 20
 }
 
 func (g *Game) Scene(eng sprite.Engine) *sprite.Node {
@@ -167,19 +167,11 @@ func loadTextures(eng sprite.Engine) []sprite.SubTex {
 	}
 }
 
-func (g *Game) Press(down bool) {
-	if g.gopher.dead {
-		// Player can't control a dead gopher.
-		return
-	}
+func (g *Game) Press(down bool, y float32, x float32) {
 
 	if down {
-		g.gopher.size = g.gopher.size + 20
+		//	g.gopher.y = y
+		g.gopher.size = g.gopher.size + 1
 
-	} else {
-		// Stop gopher rising on button release.
-		if g.gopher.v < 0 {
-			g.gopher.v = 0
-		}
 	}
 }
